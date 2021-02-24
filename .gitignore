@@ -1,2 +1,7 @@
 weights/*
 data/*
+images/*
+ckpts/*
+scripts/*
+wandb/*
+__pycache__/*
