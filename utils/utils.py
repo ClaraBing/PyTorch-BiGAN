@@ -15,3 +15,12 @@ def weights_init_normal(m):
         m.weight.data.normal_(1.0, 0.01)
         if m.bias is not None:
             m.bias.data.fill_(0)
+
+def save_ckpt(bigan, fckpt):
+    ckpt = {
+      'G': bigan.G.state_dict(),
+      'E': bigan.E.state_dict(),
+      'D': bigan.D.state_dict(),
+    }
+    torch.save(ckpt, fckpt)
+
