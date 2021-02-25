@@ -105,7 +105,7 @@ class Encoder(nn.Module):
         self.bn5 = nn.BatchNorm2d(512)
         self.conv6 = nn.Conv2d(512, 512, 1, stride=1, bias=False)
         self.bn6 = nn.BatchNorm2d(512)
-        self.bn7 = nn.Conv2d(512, z_dim*2, 1, stride=1, bias=True)
+        self.conv7 = nn.Conv2d(512, z_dim*2, 1, stride=1, bias=True)
 
     def reparameterize(self, z):
         z = z.view(z.size(0), -1)
@@ -121,5 +121,5 @@ class Encoder(nn.Module):
         x = F.leaky_relu(self.bn4(self.conv4(x)), negative_slope=0.1)
         x = F.leaky_relu(self.bn5(self.conv5(x)), negative_slope=0.1)
         x = F.leaky_relu(self.bn6(self.conv6(x)), negative_slope=0.1)
-        z = self.reparameterize(self.conv6(x))
+        z = self.reparameterize(self.conv7(x))
         return z.view(x.size(0), self.z_dim, 1, 1)
