@@ -25,6 +25,24 @@ class TrainerBiGAN:
         self.train_loader = data
         self.device = device
 
+        if self.args.use_l2_loss:
+          self.l2_loss = torch.nn.MSELoss()
+
+
+    def get_latent_l2_loss(self):
+        # z_ = torch.randn((self.args.batch_size, self.args.latent_dim))
+        # z_ = z_.view(-1, self.args.latent_dim)
+        z_ = torch.randn((self.args.batch_size, self.args.latent_dim, 1, 1)).to(self.device)
+        gen_fake_batch = self.G(z_)
+        e_g_z = self.E(gen_fake_batch)
+        latent_loss = self.args.l2_loss_weight * self.l2_loss(e_g_z, z_)
+        return latent_loss
+
+    def get_image_l2_loss(self, x):
+        fake_z = self.E(x)
+        g_e_x = self.G(fake_z)
+        latent_loss = self.args.l2_loss_weight * self.l2_loss(g_e_x, x)
+        return latent_loss
 
     def train(self):
         """Training the BiGAN"""
@@ -117,6 +135,10 @@ class TrainerBiGAN:
                     loss_ge = - torch.mean(out_fake) + torch.mean(out_true)
                 else:
                     loss_ge = criterion(out_fake, y_true) + criterion(out_true, y_fake)
+
+                if self.args.use_l2_loss:
+                    loss_ge += self.get_latent_l2_loss()
+                    loss_ge += self.get_image_l2_loss(x_true)
                 
                 loss_ge.backward()
                 optimizer_ge.step()
