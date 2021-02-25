@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import pdb
 
 class Discriminator(nn.Module):
     def __init__(self, z_dim=32, wasserstein=False):
@@ -58,9 +59,10 @@ class Discriminator(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, z_dim=32):
+    def __init__(self, z_dim=32, use_tanh=1):
         super(Generator, self).__init__()
         self.z_dim = z_dim
+        self.use_tanh = use_tanh
 
         self.output_bias = nn.Parameter(torch.zeros(3, 32, 32), requires_grad=True)
         self.deconv1 = nn.ConvTranspose2d(z_dim, 256, 4, stride=1, bias=False)
@@ -81,7 +83,10 @@ class Generator(nn.Module):
         z = F.leaky_relu(self.bn3(self.deconv3(z)), negative_slope=0.1)
         z = F.leaky_relu(self.bn4(self.deconv4(z)), negative_slope=0.1)
         z = F.leaky_relu(self.bn5(self.deconv5(z)), negative_slope=0.1)
-        return torch.sigmoid(self.deconv6(z) + self.output_bias)
+        if self.use_tanh:
+          return torch.tanh(self.deconv6(z) + self.output_bias)
+        else:
+          return torch.sigmoid(self.deconv6(z) + self.output_bias)
 
 
 class Encoder(nn.Module):

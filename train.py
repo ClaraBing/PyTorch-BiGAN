@@ -46,7 +46,7 @@ class TrainerBiGAN:
 
     def train(self):
         """Training the BiGAN"""
-        self.G = Generator(self.args.latent_dim).to(self.device)
+        self.G = Generator(self.args.latent_dim, use_tanh=self.args.normalize_data).to(self.device)
         self.E = Encoder(self.args.latent_dim).to(self.device)
         self.D = Discriminator(self.args.latent_dim, self.args.wasserstein).to(self.device)
 
