@@ -5,6 +5,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import torchvision.utils as vutils
 
+import os
 import numpy as np
 from barbar import Bar
 
@@ -50,9 +51,15 @@ class TrainerBiGAN:
         self.E = Encoder(self.args.latent_dim).to(self.device)
         self.D = Discriminator(self.args.latent_dim, self.args.wasserstein).to(self.device)
 
-        self.G.apply(weights_init_normal)
-        self.E.apply(weights_init_normal)
-        self.D.apply(weights_init_normal)
+        if self.args.pretrained_path and os.path.exists(self.args.pretrained_path):
+          ckpt = torch.load(self.args.pretrained_path)
+          self.G.load_state_dict(ckpt['G'])
+          self.E.load_state_dict(ckpt['E'])
+          self.D.load_state_dict(ckpt['D'])
+        else:
+          self.G.apply(weights_init_normal)
+          self.E.apply(weights_init_normal)
+          self.D.apply(weights_init_normal)
 
         if self.args.wasserstein:
             optimizer_ge = optim.RMSprop(list(self.G.parameters()) +

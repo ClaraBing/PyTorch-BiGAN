@@ -17,7 +17,7 @@ except:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_epochs", type=int, default=200,
+    parser.add_argument("--num-epochs", type=int, default=200,
                         help="number of epochs")
     parser.add_argument('--lr_adam', type=float, default=1e-4,
                         help='learning rate')
@@ -41,6 +41,7 @@ if __name__ == '__main__':
                         help="File path for ckpt.")
     parser.add_argument('--save-token', type=str, default='',
                         help="Suffix for save_path")
+    parser.add_argument('--pretrained-path', type=str, default='')
     #parsing arguments.
     args = parser.parse_args()
     args.save_path = 'BiGAN_lr{}_wd1e-6_bt{}_dim{}_W{}_{}epoch{}{}{}.pt'.format(
