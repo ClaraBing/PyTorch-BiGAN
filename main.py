@@ -43,10 +43,11 @@ if __name__ == '__main__':
                         help="Suffix for save_path")
     #parsing arguments.
     args = parser.parse_args()
-    args.save_path = 'BiGAN_lr{}_wd1e-6_bt{}_dim{}_W{}_{}epoch{}{}.pt'.format(
+    args.save_path = 'BiGAN_lr{}_wd1e-6_bt{}_dim{}_W{}_{}epoch{}{}{}.pt'.format(
       args.lr_adam, args.batch_size, args.latent_dim, 1 if args.wasserstein else 0,
-      'l2{}'.format(args.l2_loss_weight) if args.use_l2_loss else '',
+      'l2{}_'.format(args.l2_loss_weight) if args.use_l2_loss else '',
       args.num_epochs,
+      '_normed' if args.normalize_data else '',
       '_'+args.save_token if args.save_token else '')
     if USE_WANDB:
       wandb.init(project='visualize', name=args.save_path, config=args)
