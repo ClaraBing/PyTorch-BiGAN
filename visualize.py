@@ -121,7 +121,7 @@ def yosinski(coord_idx, model, **kwargs):
     model.eval()
     l2_reg = kwargs.pop('l2_reg', 1e-3)
     learning_rate = kwargs.pop('learning_rate', 25)
-    num_iterations = kwargs.pop('num_iterations', 100)
+    num_iterations = kwargs.pop('num_iterations', 200)
     blur_every = kwargs.pop('blur_every', 10)
     max_jitter = kwargs.pop('max_jitter', 16)
     show_every = kwargs.pop('show_every', 25)
@@ -130,7 +130,7 @@ def yosinski(coord_idx, model, **kwargs):
     os.makedirs(img_dir, exist_ok=1)
     subfolder = kwargs.pop('subfolder', '')
     if subfolder:
-      img_dir = os.path.join(img_dir, 'subfolder')
+      img_dir = os.path.join(img_dir, subfolder)
       os.makedirs(img_dir, exist_ok=1)
 
     def jitter(X, ox, oy):
@@ -183,7 +183,9 @@ def yosinski(coord_idx, model, **kwargs):
             hi = float((1.0 - SQUEEZENET_MEAN[c]) / SQUEEZENET_STD[c])
             img.data[:, c].clamp_(min=lo, max=hi)
         if t % blur_every == 0:
-            blur_image(img.data, sigma=0.5)
+            # sigma = 0.5
+            sigma = 0.1
+            blur_image(img.data, sigma)
         
         # Periodically show the image
         if t == 0 or (t + 1) % show_every == 0 or t == num_iterations - 1:
@@ -196,7 +198,8 @@ def yosinski(coord_idx, model, **kwargs):
 if __name__ == '__main__':
   latent_dim = 256
   image_size = 32
-  fckpt = 'ckpts/BiGAN_lr0.0003_wd1e-6_bt128_dim256_W0_epoch800.pt'
+  # fckpt = 'ckpts/BiGAN_lr0.0003_wd1e-6_bt128_dim256_W0_epoch800.pt'
+  fckpt = 'ckpts/BiGAN_lr0.0001_wd1e-6_bt128_dim256_W0_l23.0_epoch200.pt'
   E = get_encoder(latent_dim, fckpt)
 
   img_size = [3, IMG_SIZE, IMG_SIZE]
@@ -206,4 +209,5 @@ if __name__ == '__main__':
   img_token = ''
   # get_max_act(E, img_size, latent_dim, coord_idx, subfolder=subfolder, img_token=img_token)
 
-  yosinski(coord_idx, E)
+  subfolder = 'e200_unnorm_sigma0.1'
+  yosinski(coord_idx, E, subfolder=subfolder)
