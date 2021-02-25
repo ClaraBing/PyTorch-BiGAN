@@ -125,6 +125,6 @@ class Encoder(nn.Module):
         x = F.leaky_relu(self.bn5(self.conv5(x)), negative_slope=0.1)
         x = F.leaky_relu(self.bn6(self.conv6(x)), negative_slope=0.1)
         z = self.reparameterize(self.conv7(x))
-        if self.use_relu_z::
+        if self.use_relu_z:
           z = self.relu(z)
         return z.view(x.size(0), self.z_dim, 1, 1)
