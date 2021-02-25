@@ -103,11 +103,13 @@ def vis_img(img, fimg):
 
 def yosinski(coord_idx, model, **kwargs):
     """
-    Generate an image to maximize the score of coord_idx under a pretrained model.
+    Ref: https://github.com/cs231n/code/blob/master/2019/a3/NetworkVisualization-PyTorch.ipynb
+
+    Goal: find an image to maximize the score of coord_idx under a pretrained model, w/ L2 reg.
     
     Inputs:
-    - coord_idx: Integer in the range [0, 1000) giving the index of the class
-    - model: A pretrained CNN that will be used to generate the image
+    - coord_idx: Integer in the range [0, latent_dim) indexing the coordinate of the latent.
+    - model: A pretrained encoder
     
     Keyword arguments:
     - l2_reg: Strength of L2 regularization on the image
@@ -161,13 +163,6 @@ def yosinski(coord_idx, model, **kwargs):
         ox, oy = random.randint(0, max_jitter), random.randint(0, max_jitter)
         img.data.copy_(jitter(img.data, ox, oy))
 
-        ########################################################################
-        # TODO: Use the model to compute the gradient of the score for the     #
-        # class coord_idx with respect to the pixels of the image, and make a   #
-        # gradient step on the image using the learning rate. Don't forget the #
-        # L2 regularization term!                                              #
-        # Be very careful about the signs of elements in your code.            #
-        ########################################################################
         scores = model(img)
         loss = -scores[0, coord_idx] + l2_reg * (img * img).sum()
         loss.backward()
@@ -210,4 +205,5 @@ if __name__ == '__main__':
   # get_max_act(E, img_size, latent_dim, coord_idx, subfolder=subfolder, img_token=img_token)
 
   subfolder = 'e200_unnorm_sigma0.1'
-  yosinski(coord_idx, E, subfolder=subfolder)
+  for coord_idx in range(latent_dim):
+    yosinski(coord_idx, E, subfolder=subfolder)
