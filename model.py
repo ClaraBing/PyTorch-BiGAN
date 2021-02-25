@@ -90,9 +90,12 @@ class Generator(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, z_dim=32):
+    def __init__(self, z_dim=32, use_relu_z=0):
         super(Encoder, self).__init__()
         self.z_dim = z_dim
+        self.use_relu_z = use_relu_z
+        self.relu = nn.ReLU()
+
         self.conv1 = nn.Conv2d(3, 32, 5, stride=1, bias=False)
         self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, 4, stride=2, bias=False)
@@ -122,4 +125,6 @@ class Encoder(nn.Module):
         x = F.leaky_relu(self.bn5(self.conv5(x)), negative_slope=0.1)
         x = F.leaky_relu(self.bn6(self.conv6(x)), negative_slope=0.1)
         z = self.reparameterize(self.conv7(x))
+        if self.use_relu_z::
+          z = self.relu(z)
         return z.view(x.size(0), self.z_dim, 1, 1)
