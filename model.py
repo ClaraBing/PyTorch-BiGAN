@@ -117,13 +117,31 @@ class Encoder(nn.Module):
         eps = torch.randn_like(std)
         return mu + eps * std
 
-    def forward(self, x):
+    def center_feature(self, x):
+       # Return the center location of a feature map.
+       h, w = x.shape[-2:]
+       hc, wc = h//2, w//2
+       return x[:, :, hc, wc]
+
+    def forward(self, x, ret_layer=-1):
         x = F.leaky_relu(self.bn1(self.conv1(x)), negative_slope=0.1)
+        if ret_layer == 1:
+          return self.center_feature(x)
         x = F.leaky_relu(self.bn2(self.conv2(x)), negative_slope=0.1)
+        if ret_layer == 2:
+          return self.center_feature(x)
         x = F.leaky_relu(self.bn3(self.conv3(x)), negative_slope=0.1)
+        if ret_layer == 3:
+          return self.center_feature(x)
         x = F.leaky_relu(self.bn4(self.conv4(x)), negative_slope=0.1)
+        if ret_layer == 4:
+          return self.center_feature(x)
         x = F.leaky_relu(self.bn5(self.conv5(x)), negative_slope=0.1)
+        if ret_layer == 5:
+          return self.center_feature(x)
         x = F.leaky_relu(self.bn6(self.conv6(x)), negative_slope=0.1)
+        if ret_layer == 6:
+          return self.center_feature(x)
         z = self.reparameterize(self.conv7(x))
         if self.use_relu_z:
           z = self.relu(z)

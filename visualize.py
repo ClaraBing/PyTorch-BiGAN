@@ -127,12 +127,16 @@ def yosinski(coord_idx, model, **kwargs):
     blur_every = kwargs.pop('blur_every', 10)
     max_jitter = kwargs.pop('max_jitter', 16)
     show_every = kwargs.pop('show_every', 25)
+    ret_layer = kwargs.pop('ret_layer', -1)
 
     img_dir = 'images/yosinski/'
     os.makedirs(img_dir, exist_ok=1)
     subfolder = kwargs.pop('subfolder', '')
     if subfolder:
       img_dir = os.path.join(img_dir, subfolder)
+      os.makedirs(img_dir, exist_ok=1)
+    if ret_layer != -1:
+      img_dir = os.path.join(img_dir, 'layer{}'.format(ret_layer))
       os.makedirs(img_dir, exist_ok=1)
 
     def jitter(X, ox, oy):
@@ -163,7 +167,7 @@ def yosinski(coord_idx, model, **kwargs):
         ox, oy = random.randint(0, max_jitter), random.randint(0, max_jitter)
         img.data.copy_(jitter(img.data, ox, oy))
 
-        scores = model(img)
+        scores = model(img, ret_layer=ret_layer)
         loss = -scores[0, coord_idx] + l2_reg * (img * img).sum()
         loss.backward()
         img.data.add_(-learning_rate, img.grad.data)
@@ -205,5 +209,6 @@ if __name__ == '__main__':
   # get_max_act(E, img_size, latent_dim, coord_idx, subfolder=subfolder, img_token=img_token)
 
   subfolder = 'e200_unnorm_sigma0.1'
+  ret_layer = 1
   for coord_idx in range(latent_dim):
-    yosinski(coord_idx, E, subfolder=subfolder)
+    yosinski(coord_idx, E, subfolder=subfolder, ret_layer=ret_layer)
