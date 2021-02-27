@@ -48,7 +48,7 @@ class TrainerBiGAN:
     def train(self):
         """Training the BiGAN"""
         self.G = Generator(self.args.latent_dim, use_tanh=self.args.normalize_data).to(self.device)
-        self.E = Encoder(self.args.latent_dim, self.args.use_relu_z).to(self.device)
+        self.E = Encoder(self.args.latent_dim, self.args.use_relu_z, self.args.first_filter_size).to(self.device)
         self.D = Discriminator(self.args.latent_dim, self.args.wasserstein).to(self.device)
 
         if self.args.pretrained_path and os.path.exists(self.args.pretrained_path):

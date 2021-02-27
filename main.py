@@ -32,6 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--clamp', type=float, default=1e-2,
                         help='Clipping gradients for WGAN.')
     # NOTE: added by BB
+    parser.add_argument('--first-filter-size', type=int, default=5,
+                        help="Size of the 1st conv layer of the Encoder.")
     parser.add_argument('--normalize-data', type=int, default=1)
     parser.add_argument('--use-l2-loss', type=int, default=0,
                         help="Whether to use latent / image l2 loss.")
@@ -46,8 +48,9 @@ if __name__ == '__main__':
     parser.add_argument('--pretrained-path', type=str, default='')
     #parsing arguments.
     args = parser.parse_args()
-    args.save_path = 'BiGAN_lr{}_wd1e-6_bt{}_dim{}_W{}_{}{}epoch{}{}{}.pt'.format(
-      args.lr_adam, args.batch_size, args.latent_dim, 1 if args.wasserstein else 0,
+    args.save_path = 'BiGAN_lr{}_wd1e-6_bt{}_dim{}_k{}_W{}_{}{}epoch{}{}{}.pt'.format(
+      args.lr_adam, args.batch_size, args.latent_dim, args.first_filter_size,
+      1 if args.wasserstein else 0,
       'l2{}_'.format(args.l2_loss_weight) if args.use_l2_loss else '',
       'zRelu_' if args.use_relu_z else '',
       args.num_epochs,

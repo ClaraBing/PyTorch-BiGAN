@@ -90,13 +90,14 @@ class Generator(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, z_dim=32, use_relu_z=0):
+    def __init__(self, z_dim=32, use_relu_z=0, first_filter_size=5):
         super(Encoder, self).__init__()
         self.z_dim = z_dim
         self.use_relu_z = use_relu_z
         self.relu = nn.ReLU()
 
-        self.conv1 = nn.Conv2d(3, 32, 5, stride=1, bias=False)
+        first_pad = (28 + first_filter_size - 1 - 32) // 2
+        self.conv1 = nn.Conv2d(3, 32, first_filter_size, stride=1, padding=first_pad, bias=False)
         self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, 4, stride=2, bias=False)
         self.bn2 = nn.BatchNorm2d(64)
