@@ -69,14 +69,24 @@ class TrainerBiGAN:
           self.E.apply(weights_init_normal)
           self.D.apply(weights_init_normal)
 
-        if self.args.wasserstein:
-            optimizer_ge = optim.RMSprop(list(self.G.parameters()) +
-                                         list(self.E.parameters()), lr=self.args.lr_rmsprop)
-            optimizer_d = optim.RMSprop(self.D.parameters(), lr=self.args.lr_rmsprop)
+        if self.args.freeze_GD:
+          # Train the encoder only, with the generator & discriminator frozen.
+          self.G.eval()
+          self.D.eval()
+          optimizer_d = None
+          if self.args.wasserstein:
+              optimizer_ge = optim.RMSprop(list(self.E.parameters()), lr=self.args.lr_rmsprop)
+          else:
+              optimizer_ge = optim.Adam(list(self.E.parameters()), lr=self.args.lr_adam, weight_decay=1e-6)
         else:
-            optimizer_ge = optim.Adam(list(self.G.parameters()) +
-                                      list(self.E.parameters()), lr=self.args.lr_adam, weight_decay=1e-6)
-            optimizer_d = optim.Adam(self.D.parameters(), lr=self.args.lr_adam, weight_decay=1e-6)
+          if self.args.wasserstein:
+              optimizer_ge = optim.RMSprop(list(self.G.parameters()) +
+                                           list(self.E.parameters()), lr=self.args.lr_rmsprop)
+              optimizer_d = optim.RMSprop(self.D.parameters(), lr=self.args.lr_rmsprop)
+          else:
+              optimizer_ge = optim.Adam(list(self.G.parameters()) +
+                                        list(self.E.parameters()), lr=self.args.lr_adam, weight_decay=1e-6)
+              optimizer_d = optim.Adam(self.D.parameters(), lr=self.args.lr_adam, weight_decay=1e-6)
 
         fixed_z = Variable(torch.randn((16, self.args.latent_dim, 1, 1)),
                            requires_grad=False).to(self.device)
@@ -102,7 +112,8 @@ class TrainerBiGAN:
                   noise1, noise2 = 0, 0
 
                 #Cleaning gradients.
-                optimizer_d.zero_grad()
+                if optimizer_d:
+                  optimizer_d.zero_grad()
                 optimizer_ge.zero_grad()
 
                 #Generator:
@@ -127,7 +138,8 @@ class TrainerBiGAN:
 
                 #Computing gradients and backpropagate.
                 loss_d.backward()
-                optimizer_d.step()
+                if optimizer_d:
+                  optimizer_d.step()
                 
                 #Cleaning gradients.
                 optimizer_ge.zero_grad()
