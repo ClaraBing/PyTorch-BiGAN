@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 import pdb
 
+DEBUG = 1
+
 class Discriminator(nn.Module):
     def __init__(self, img_channels=3, z_dim=32, wasserstein=False):
         super(Discriminator, self).__init__()
@@ -208,11 +210,13 @@ class Generator_small(nn.Module):
         self.deconv1 = nn.ConvTranspose2d(z_dim, 64, 4, stride=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.deconv2 = nn.ConvTranspose2d(64, img_channels, 4, stride=2, bias=False)
-        self.output_bias = nn.Parameter(torch.zeros(img_channels, 10, 10), requires_grad=True)
+        self.output_bias = nn.Parameter(torch.zeros(img_channels, 28, 28), requires_grad=True)
 
     def forward(self, z):
-        print('Generator forward')
+        if DEBUG:
+          print('Generator forward')
         z = F.leaky_relu(self.bn1(self.deconv1(z)), negative_slope=0.1)
+        pdb.set_trace()
         z = self.deconv2(z) + self.output_bias
         if self.use_tanh:
           return torch.tanh(z)
@@ -247,7 +251,8 @@ class Encoder_small(nn.Module):
         return x[:, :, hc, wc]
 
     def forward(self, x, ret_layer=-1):
-        print('Encoder forward')
+        if DEBUG:
+          print('Encoder forward')
         x = F.leaky_relu(self.bn1(self.conv1(x)), negative_slope=0.1)
         if ret_layer == 1:
           return self.center_feature(x)
