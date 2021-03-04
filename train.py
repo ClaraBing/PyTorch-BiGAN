@@ -9,7 +9,8 @@ import os
 import numpy as np
 from barbar import Bar
 
-from model import Generator, Encoder, Discriminator
+# from model import Generator, Encoder, Discriminator
+from model import *
 from utils.utils import weights_init_normal, save_ckpt
 
 try:
@@ -47,9 +48,16 @@ class TrainerBiGAN:
 
     def train(self):
         """Training the BiGAN"""
-        self.G = Generator(self.args.latent_dim, use_tanh=self.args.normalize_data).to(self.device)
-        self.E = Encoder(self.args.latent_dim, self.args.use_relu_z, self.args.first_filter_size).to(self.device)
-        self.D = Discriminator(self.args.latent_dim, self.args.wasserstein).to(self.device)
+        if self.args.data == 'mnist':
+          img_channels = 1
+          self.G = Generator_small(img_channels, self.args.latent_dim, use_tanh=self.args.normalize_data).to(self.device)
+          self.E = Encoder_small(img_channels, self.args.latent_dim, self.args.use_relu_z, self.args.first_filter_size).to(self.device)
+          self.D = Discriminator_small(img_channels, self.args.latent_dim, self.args.wasserstein).to(self.device)
+        else:
+          img_channels = 3
+          self.G = Generator(img_channels, self.args.latent_dim, use_tanh=self.args.normalize_data).to(self.device)
+          self.E = Encoder(img_channels, self.args.latent_dim, self.args.use_relu_z, self.args.first_filter_size).to(self.device)
+          self.D = Discriminator(img_channels, self.args.latent_dim, self.args.wasserstein).to(self.device)
 
         if self.args.pretrained_path and os.path.exists(self.args.pretrained_path):
           ckpt = torch.load(self.args.pretrained_path)

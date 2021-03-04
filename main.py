@@ -4,7 +4,7 @@ import torch
 import os
 
 from train import TrainerBiGAN
-from preprocess import get_cifar10
+from preprocess import *
 # , get_mnist
 from utils.utils import save_ckpt
 
@@ -17,6 +17,7 @@ except:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--data', type=str, choices=['cifar', 'mnist'])
     parser.add_argument("--num-epochs", type=int, default=200,
                         help="number of epochs")
     parser.add_argument('--lr_adam', type=float, default=1e-4,
@@ -48,7 +49,8 @@ if __name__ == '__main__':
     parser.add_argument('--pretrained-path', type=str, default='')
     #parsing arguments.
     args = parser.parse_args()
-    args.save_path = 'BiGAN_lr{}_wd1e-6_bt{}_dim{}_k{}_W{}_{}{}epoch{}{}{}.pt'.format(
+    args.save_path = 'BiGAN_{}_lr{}_wd1e-6_bt{}_dim{}_k{}_W{}_{}{}epoch{}{}{}.pt'.format(
+      args.data,
       args.lr_adam, args.batch_size, args.latent_dim, args.first_filter_size,
       1 if args.wasserstein else 0,
       'l2{}_'.format(args.l2_loss_weight) if args.use_l2_loss else '',
@@ -63,7 +65,10 @@ if __name__ == '__main__':
     #check if cuda is available.
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    data = get_cifar10(args)
+    if args.data == 'cifar':
+      data = get_cifar10(args)
+    elif args.data == 'mnist':
+      data = get_mnist(args)
 
     bigan = TrainerBiGAN(args, data, device)
     bigan.train()
