@@ -90,8 +90,14 @@ def get_max_act(E, img_size, latent_dim, coord_idx,
     act.backward()
     img = img + img.grad * eta
     img = img.detach()
-    img[img>1] = 1
-    img[img<0] = 0
+    mean, std = img.mean(), img.std()
+    bdd = min(4 * std, 0.5)
+    img -= img.mean()
+    img[img>bdd] = bdd
+    img[img<-bdd] = -bdd
+    img += mean
+    # img[img>1] = 1
+    # img[img<0] = 0
     if (ni+1) % 50 == 0:
       fimg = 'images/max_act/{}/vis_c{}{}_iter{}.png'.format(subfolder, coord_idx, img_token, ni+1)
       vis_img(img, fimg)
@@ -132,8 +138,8 @@ def yosinski(coord_idx, model, **kwargs):
     ret_layer = kwargs.pop('ret_layer', -1)
     upto = kwargs.pop('upto', -1)
     img_token = kwargs.pop('img_token', '')
-    bound_pixels = kwargs.pop('bound_pixels', 0)
-    if bound_pixels:
+    bdd_pixels = kwargs.pop('bdd_pixels', 0)
+    if bdd_pixels:
       img_token += 'bddPix_'
 
     img_dir = 'images/yosinski/'
@@ -185,19 +191,23 @@ def yosinski(coord_idx, model, **kwargs):
 
         # As regularizer, clamp and periodically blur the image
         for c in range(3):
-            lo = float(-SQUEEZENET_MEAN[c] / SQUEEZENET_STD[c])
-            hi = float((1.0 - SQUEEZENET_MEAN[c]) / SQUEEZENET_STD[c])
+            # lo = float(-SQUEEZENET_MEAN[c] / SQUEEZENET_STD[c])
+            # hi = float((1.0 - SQUEEZENET_MEAN[c]) / SQUEEZENET_STD[c])
+            lo = float(-CIFAR_MEAN[c] / CIFAR_STD[c])
+            hi = float((1.0 - CIFAR_MEAN[c]) / CIFAR_STD[c])
             img.data[:, c].clamp_(min=lo, max=hi)
         if t % blur_every == 0:
             # sigma = 0.5
             sigma = 0.1
             blur_image(img.data, sigma)
+
+        # pdb.set_trace()
         
         # Periodically show the image
         if t == 0 or (t + 1) % show_every == 0 or t == num_iterations - 1:
             img_vis = img.data.clone().cpu()
-            if bound_pixels:
-              img_vis = vis_weights(img_vis)
+            if bdd_pixels:
+              img_vis = bound_pixels(img_vis)
             if upto != -1:
               img_vis = img_vis[:, :, :upto, :upto]
             image = deprocess(img_vis)
@@ -217,10 +227,15 @@ if __name__ == '__main__':
     6: 512,
     -1: latent_dim,
   }
+  uptos = {
+    1: 18,
+    3: 23,
+  }
   image_size = 32
   # fckpt = 'ckpts/BiGAN_lr0.0003_wd1e-6_bt128_dim256_W0_epoch800.pt'
   # fckpt = 'ckpts/BiGAN_lr0.0001_wd1e-6_bt128_dim256_W0_l23.0_epoch200.pt'
   fckpt = 'ckpts/BiGAN_lr0.0001_wd1e-6_bt128_dim256_W0_l23.0_epoch800_cont_tmp_e200.pt'
+  fckpt = 'ckpts/BiGAN_lr0.0001_wd1e-6_bt32_dim128_k11_W0_l23.0_epoch800__bn2conv_tmp_e750.pt'
   E = get_encoder(hidden_dims[-1], fckpt)
 
   img_size = [3, IMG_SIZE, IMG_SIZE]
@@ -230,12 +245,17 @@ if __name__ == '__main__':
   img_token = ''
   # get_max_act(E, img_size, latent_dim, coord_idx, subfolder=subfolder, img_token=img_token)
 
-  subfolder = 'e200_unnorm_sigma0.1_cont200'
+  # subfolder = 'e200_unnorm_sigma0.1_cont200'
+  subfolder = 'e800_k11'
   # img_token = 'scaled_'
-  img_token = ''
-  ret_layer = 1
-  bound_pixels = 1
-  upto = 18
+  ret_layer = 3
+  bdd_pixels = 1
+  upto = uptos[ret_layer]
+  lr = 1
+  l2_reg = 1e-2
+  img_token = '1std_lr{}_L2{}_'.format(lr, l2_reg)
+  num_iterations = 500
   for coord_idx in range(hidden_dims[ret_layer]):
     yosinski(coord_idx, E, subfolder=subfolder, ret_layer=ret_layer,
-      upto=upto, img_token=img_token, bound_pixels=bound_pixels)
+      learning_rate=lr, l2_reg=l2_reg, num_iterations=num_iterations,
+      upto=upto, img_token=img_token, bdd_pixels=bdd_pixels)
