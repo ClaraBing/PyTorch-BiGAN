@@ -20,11 +20,6 @@ def show_net_weights(fckpt, fimg, fnpy='', ckpt_key='backbone.features.0.weight'
   W1 = W1.transpose(0,2,3,1)
 
   grid = visualize_grid(W1, padding=1, blur=blur, single_channel=single_channel).astype('uint8')
-  plt.imshow(grid)
-  plt.gca().axis('off')
-  plt.savefig(fimg)
-  plt.clf()
-
   cv2.imwrite(fimg.replace('.png', '_cv2.png'), grid)
 
 scale = 1
@@ -102,21 +97,45 @@ if __name__ == '__main__':
   blur = 0
   single_channel = 0
  
-  fckpt = 'alex_pretrained.pt'
-  ckpt_key = 'features.0.weight'
-  fimg = 'images/alex_conv1_scale{}.png'.format(scale)
+  if 0:
+    # pretrained (imagenet)
+    fckpt = 'alex_pretrained.pt'
+    ckpt_key = 'features.0.weight'
+    fimg = 'images/alex_conv1_scale{}.png'.format(scale)
+
+  if 0:
+    # MNIST
+    ker_size = 7
+    fckpt = 'ckpts/BiGAN_mnist_lr0.0001_wd1e-6_bt32_dim128_k{}_W0_l23.0_epoch800__bn2conv_tmp_e150.pt'.format(ker_size)
+    ckpt_key = 'conv2.weight'
+    fimg = 'images/mnist_conv2_k{}_scale{}.png'.format(ker_size, scale)
+
+  if 0:
+    # MNIST, encoder trained more.
+    ker_size = 11
+    fckpt = 'ckpts/BiGAN_mnist_lr0.0001_wd1e-6_bt32_dim128_k11_W0_l23.0_epoch800_freezeGD__bn2conv_tmp_e100.pt'
+    ckpt_key = 'conv2.weight'
+    fimg = 'images/mnist_conv2_k{}_scale{}_freezeGD.png'.format(ker_size, scale)
+
+  if 0:
+    # CIFAR
+    fckpt = 'ckpts/BiGAN_lr0.0001_wd1e-6_bt128_dim256_W0_l23.0_epoch800_cont_tmp_e200.pt'
+    for e in range(50, 800, 50):
+      fckpt = 'ckpts/BiGAN_lr0.0001_wd1e-6_bt32_dim128_k11_W0_l23.0_epoch800__bn2conv_tmp_e{}.pt'.format(e)
+      fimg = 'images/yosinski/e200_unnorm_sigma0.1_cont200/weights/k11_conv1_e{}_scale{}.png'.format(e, scale)
+      if single_channel:
+        fimg = fimg.replace('.png', '_1channel.png')
+      ckpt_key = 'conv1.weight' 
+
+  if 1:
+    # MNIST, encoder trained more.
+    ker_size = 11
+    fckpt = 'ckpts/BiGAN_cifar_lr0.0001_wd1e-6_bt32_dim128_k11_W0_l23.0_epoch800_freezeGD__bn2conv_tmp_e350.pt'
+    ckpt_key = 'conv1.weight'
+    fimg = 'images/cifar_conv1_k{}_scale{}_freezeGD.png'.format(ker_size, scale)
+
+
   show_net_weights(fckpt, fimg, ckpt_key=ckpt_key, blur=blur, single_channel=single_channel)
-
-  exit()
-
-  fckpt = 'ckpts/BiGAN_lr0.0001_wd1e-6_bt128_dim256_W0_l23.0_epoch800_cont_tmp_e200.pt'
-  for e in range(50, 800, 50):
-    fckpt = 'ckpts/BiGAN_lr0.0001_wd1e-6_bt32_dim128_k11_W0_l23.0_epoch800__bn2conv_tmp_e{}.pt'.format(e)
-    fimg = 'images/yosinski/e200_unnorm_sigma0.1_cont200/weights/k11_conv1_e{}_scale{}.png'.format(e, scale)
-    if single_channel:
-      fimg = fimg.replace('.png', '_1channel.png')
-    ckpt_key = 'conv1.weight' 
-    show_net_weights(fckpt, fimg, ckpt_key=ckpt_key, blur=blur, single_channel=single_channel)
 
 
 
