@@ -64,50 +64,6 @@ def get_encoder(latent_dim, fckpt='', ker_size=11):
 
 scale = 1
 
-def get_max_act(E, img_size, latent_dim, coord_idx,
-                eta=0.01, subfolder='', img_token='', img_norm=1):
-  if subfolder:
-    os.makedirs('images/max_act/{}'.format(subfolder), exist_ok=1)
-  if img_token:
-    img_token = '_' + img_token
-  ei = torch.ones(latent_dim)
-  ei[coord_idx] = 1
-  ei = ei.to(device)
-
-  E.eval()
-  img = torch.rand(img_size)
-  if img_norm:
-    img -= IMG_MEAN.unsqueeze(-1).unsqueeze(-1)
-    img /= IMG_STD.unsqueeze(-1).unsqueeze(-1)
-  if len(img_size) == 3:
-    img = img.unsqueeze(0)
-  img = img.to(device)
-  
-  n_iters = 500
-  for ni in range(n_iters):
-    img.requires_grad = True
-    z = E(img)
-    act = z.view(-1).dot(ei)
-    act.backward()
-    img = img + img.grad * eta
-    img = img.detach()
-    mean, std = img.mean(), img.std()
-    bdd = min(scale * std, 0.5)
-    img -= img.mean()
-    img[img>bdd] = bdd
-    img[img<-bdd] = -bdd
-    img += mean
-    # img[img>1] = 1
-    # img[img<0] = 0
-    if (ni+1) % 50 == 0:
-      fimg = 'images/max_act/{}/vis_c{}{}_iter{}.png'.format(subfolder, coord_idx, img_token, ni+1)
-      vis_img(img, fimg)
-
-def vis_img(img, fimg):
-  img = img.cpu().squeeze(0).numpy()
-  img = img.transpose(1,2, 0) * 255
-  cv2.imwrite(fimg, img)
-
 def yosinski(coord_idx, model, **kwargs):
     """
     Ref: https://github.com/cs231n/code/blob/master/2019/a3/NetworkVisualization-PyTorch.ipynb
@@ -130,6 +86,7 @@ def yosinski(coord_idx, model, **kwargs):
     """
     model.type(dtype)
     model.eval()
+    model = model.to(device)
     l2_reg = kwargs.pop('l2_reg', 1e-3)
     learning_rate = kwargs.pop('learning_rate', 25)
     num_iterations = kwargs.pop('num_iterations', 200)
@@ -181,13 +138,15 @@ def yosinski(coord_idx, model, **kwargs):
         # Randomly jitter the image a bit; this gives slightly nicer results
         ox, oy = random.randint(0, max_jitter), random.randint(0, max_jitter)
         img.data.copy_(jitter(img.data, ox, oy))
+        img = img.to(device)
+        img.retain_grad()
 
         scores = model(img, ret_layer=ret_layer)
         loss = -scores[0, coord_idx] + l2_reg * (img * img).sum()
         loss.backward()
         # ignore the pixels that is blown up.
         img.grad.data[torch.isnan(img.grad.data)] = 0
-        img.data.add_(-learning_rate, img.grad.data)
+        img.data.add_(-learning_rate * img.grad.data)
         img.grad.data.zero_()
         
         # Undo the random jitter
@@ -266,7 +225,7 @@ if __name__ == '__main__':
 
   # subfolder = 'e200_unnorm_sigma0.1_cont200'
   # img_token = 'scaled_'
-  ret_layer = -1
+  ret_layer = 3
   bdd_pixels = 1
   if ret_layer in uptos:
     upto = uptos[ret_layer]
@@ -274,11 +233,9 @@ if __name__ == '__main__':
     upto = -1
   l2_reg = 1e-2
   num_iterations = 1000
-  for lr in [10, 3, 1, 20]:
+  for lr in [10]:
     img_token = '{}std_lr{}_reg{}_'.format(scale, lr, l2_reg)
     for coord_idx in range(hidden_dims[ret_layer]):
       yosinski(coord_idx, E, subfolder=subfolder, ret_layer=ret_layer,
         learning_rate=lr, l2_reg=l2_reg, num_iterations=num_iterations,
         upto=upto, img_token=img_token, bdd_pixels=bdd_pixels)
-      
-      break
