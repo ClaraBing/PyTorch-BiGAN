@@ -90,7 +90,10 @@ def yosinski(coord_idx, model, **kwargs):
         return X
 
     # Randomly initialize the image as a PyTorch Tensor, and make it requires gradient.
-    img = torch.randn(1, 3, IMG_SIZE, IMG_SIZE).mul_(1.0).type(dtype).requires_grad_()
+    img = torch.randn(1, 3, IMG_SIZE, IMG_SIZE).mul_(1.0)
+    # BigBiGAN requires the pixels to be [-1, 1]; may not be needed for other models.
+    img /= 1.2 * img.abs().max()
+    img = img.type(dtype).requires_grad_()
 
     for t in range(num_iterations):
         # Randomly jitter the image a bit; this gives slightly nicer results
